@@ -1,0 +1,5 @@
+data/
+result/
+reservoir/
+**/__pycache__/
+**/pretrained_weights/
