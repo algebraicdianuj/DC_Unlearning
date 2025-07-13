@@ -39,11 +39,7 @@ def IDM_condensation(
     std,
     device
 ):
-    """
-    Run the IDM synthetic-data optimization for one experiment.
-    Returns optimized synthetic images and labels.
-    """
-    # Prepare per-class indices
+
     indices_class = [[] for _ in range(num_classes)]
     for idx, lab in enumerate(labels_all.tolist()):
         indices_class[lab].append(idx)
@@ -57,7 +53,7 @@ def IDM_condensation(
             idxs = np.random.permutation(flat)[:n]
             return images_all[idxs], labels_all[idxs]
 
-    # Initialize synthetic data
+
     image_syn = torch.randn(
         (num_classes * ipc, channel, *im_size),
         device=device, requires_grad=True
@@ -69,7 +65,7 @@ def IDM_condensation(
         dtype=torch.long, device=device
     ).view(-1)
 
-    # Optionally initialize from real
+
     for c in range(num_classes):
         patch = get_images(c, ipc).detach()
         if not do_aug:
@@ -118,7 +114,7 @@ def IDM_condensation(
                     loss_ce = loss_ce * ce_weight
                 loss_total = loss_total + loss_fm + loss_ce
 
-        # Backprop once per iteration
+ 
         optim_img.zero_grad()
         loss_total.backward()
         optim_img.step()

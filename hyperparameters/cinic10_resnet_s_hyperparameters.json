@@ -1,4 +1,29 @@
 {
+    "acf_unlearning": {
+        "af_epochs": 1,
+        "acf_lr": 1e-4,
+        "weight_distribution": 34.0,   
+        "k": 2.0,
+        "K": 60.0
+    },
+    "asparse_unlearning": {
+        "af_epochs": 1,
+        "asparse_lr": 1e-4,
+        "asparse_weight_distribution": 34.0,  
+        "asparse_l1_alpha":1e-4,        
+        "asparse_k": 2.0,
+        "asparse_K": 60.0
+    },
+    "ascrub_unlearning": {
+        "af_epochs": 1,
+        "ascrub_lr": 1e-4,
+        "ascrub_weight_distribution": 34.0,    
+        "ascrub_beta": 0.001,
+        "ascrub_gamma": 0.99,
+        "ascrub_kd_T": 2.0,        
+        "ascrub_k": 2.0,
+        "ascrub_K": 60.0
+    }, 
     "retraining": {
         "retrain_lr": null,
         "retrain_epochs": 100,

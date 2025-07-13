@@ -19,14 +19,13 @@ def train_model(model, train_loader, val_loader, criterion, device,
                 epochs=200, warmup=10, save_dir='./checkpoints', 
                 model_name='model', exp='1'):
     
-    # Create temporary directory for intermediate best model weights
+
     temp_dir = tempfile.mkdtemp()
     temp_best_path = os.path.join(temp_dir, "best_model.pth")
     
     best_acc = 0
     all_result = {"train_acc": [], "val_acc": []}
     
-    # Define optimizer matching reference code
     optimizer = torch.optim.SGD(
         model.parameters(),
         lr,
@@ -84,22 +83,18 @@ def train_model(model, train_loader, val_loader, criterion, device,
         
         print(f'Epoch {epoch+1}: Train Acc: {train_acc:.3f}, Val Acc: {val_acc:.3f}, Time: {time.time() - start_time:.2f}s')
     
-    # Load the best model weights from temporary directory
     if os.path.exists(temp_best_path):
         model.load_state_dict(torch.load(temp_best_path))
     
-    # Save the final model state dictionary to the specified path
     os.makedirs(save_dir, exist_ok=True)
     file_path = os.path.join(save_dir, f'pretrained_{model_name}_exp_{exp}.pth')
     torch.save(model.state_dict(), file_path)
     
     training_time = time.time() - starting_time
     print(f'Total training time: {training_time:.2f}s, Best validation accuracy: {best_acc:.3f}')
-    
-    # Delete the temporary directory
+
     shutil.rmtree(temp_dir)
     
-    # Return only the model with best weights
     return model                
 
 

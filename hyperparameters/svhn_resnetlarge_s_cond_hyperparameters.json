@@ -1,4 +1,11 @@
 {
+    "acf_unlearning": {
+        "af_epochs": 1,
+        "acf_lr": 2.4e-4,
+        "weight_distribution": 34.0,          
+        "k": 2.0,
+        "K": 60.0
+    },
     "retraining": {
         "retrain_lr": null,
         "retrain_epochs": 100,
@@ -7,11 +14,11 @@
         "retrain_warmup": 5
     },
     "catastrophic_forgetting": {
-        "cf_lr": 0.03,
+        "cf_lr": 0.12,
         "cf_epochs": 50,
         "cf_momentum": 0.502,
         "cf_weight_decay": 0.0014,
-        "cf_warmup": 5
+        "cf_warmup": 3
     },
     "fisher_forgetting": {
         "fisher_alpha": 1e-6
@@ -54,13 +61,13 @@
         "bad_kdT": 2.0,
         "bad_distill_epochs": 30,
         "partial_retain_ratio": 0.6234455830656301,
-        "bad_distill_lr": 0.003,
+        "bad_distill_lr": 0.004,
         "bad_momentum": 0.9,
         "bad_distill_weight_decay": 0.0005
 
     },
     "l1_sparsity": {
-        "l1_alpha": 1e-5,
+        "l1_alpha": 5e-4,
         "l1_epochs": 40,
         "l1_no_l1_epochs": 3,
         "l1_lr": 5e-3,

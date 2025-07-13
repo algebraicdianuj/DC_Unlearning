@@ -183,7 +183,6 @@ def main(args):
 
     dst_test_sliced = TensorDatasett(final_test_images, final_test_labels)
 
-    #=================Optional Preprocessing============================
 
     dst_train=dst_train_sliced
     dst_test=dst_test_sliced

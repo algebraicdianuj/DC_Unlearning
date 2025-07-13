@@ -73,7 +73,7 @@ def distillation_unlearning(retain_loader,
             loss.backward()
             optimizer_s.step()
 
-        scheduler.step()  # Step LR at the end of each epoch
+        scheduler.step()  
 
     for param in model_student.parameters():
         param.requires_grad = False

@@ -20,19 +20,19 @@ class Blend(nn.Module):
 
 
 def blend_DC(
-    target_images,      # list of [n_i,C,H,W] on CPU
-    target_labels,      # list of [n_i] on CPU
+    target_images,      # list of [n_i,C,H,W]
+    target_labels,      # list of [n_i] 
     model,
     lr=0.05,
     num_iterations=500,
     device='cuda',
     batch_size=32,
 ):
-    model.to(device).eval()             # eval→no BN buffers, no train-mode overhead
+    model.to(device).eval()            
     for p in model.parameters():
         p.requires_grad = False
 
-    # 1) precompute & move
+
     target_features = []
     with torch.no_grad():
         for imgs in target_images:
@@ -45,11 +45,11 @@ def blend_DC(
 
     target_images = [imgs.to(device) for imgs in target_images]
 
-    # 2) build Blend modules
+
     blend_modules = [Blend(imgs.size(0), device).to(device)
                      for imgs in target_images]
 
-    # 3) optimizer
+
     optimizer = torch.optim.SGD(
         [w for bm in blend_modules for w in bm.parameters()],
         lr=lr, momentum=0.5
@@ -57,11 +57,11 @@ def blend_DC(
 
     num_targets = len(blend_modules)
 
-    # 4) optimize
+
     for it in range(num_iterations):
         optimizer.zero_grad()
         ref_loss = 0.0
-        # accumulate gradient in small chunks
+
         for imgs, blend, feat in zip(target_images, blend_modules, target_features):
             synth = blend(imgs)                      
             synth_feats = model.embed(synth)    
@@ -69,7 +69,7 @@ def blend_DC(
             ref_loss += loss_i.item()* num_targets
             loss_i.backward()                      
 
-            # free intermediates
+ 
             del synth, synth_feats, loss_i
 
         print(f"Iteration {it+1}/{num_iterations}, Loss: {ref_loss}")
@@ -77,7 +77,7 @@ def blend_DC(
         optimizer.step()
         torch.cuda.empty_cache()
 
-    # 5) collect final
+
     syn_images = []
     syn_labels = []
     with torch.no_grad():

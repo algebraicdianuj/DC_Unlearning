@@ -37,7 +37,6 @@ def retraining(model, criterion, device, learning_rate, momentum, weight_decay,w
         weight_decay=weight_decay
     )
 
-    # Use lambda scheduler with warmup and cosine annealing as in reference
     lambda0 = lambda cur_iter: (cur_iter + 1) / warmup if cur_iter < warmup else (
         0.5 * (1.0 + np.cos(np.pi * ((cur_iter - warmup) / (retraining_epochs - warmup))))
     )
@@ -55,9 +54,9 @@ def retraining(model, criterion, device, learning_rate, momentum, weight_decay,w
             loss.backward()
             optimizer.step()
 
-        scheduler.step()  # Step the LR scheduler at the end of each epoch
+        scheduler.step() 
 
-    # Freeze model parameters after retraining
+
     for name, param in model.named_parameters():
         param.requires_grad = False
 

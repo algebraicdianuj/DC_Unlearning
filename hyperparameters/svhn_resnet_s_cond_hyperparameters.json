@@ -1,4 +1,11 @@
 {
+    "acf_unlearning": {
+        "af_epochs": 1,
+        "acf_lr": 2.4e-4,
+        "weight_distribution": 34.0,          
+        "k": 2.0,
+        "K": 60.0
+    },
     "retraining": {
         "retrain_lr": null,
         "retrain_epochs": 100,
@@ -7,7 +14,7 @@
         "retrain_warmup": 5
     },
     "catastrophic_forgetting": {
-        "cf_lr": 0.04,
+        "cf_lr": 0.3,
         "cf_epochs": 50,
         "cf_momentum": 0.502,
         "cf_weight_decay": 0.0014,
@@ -60,7 +67,7 @@
 
     },
     "l1_sparsity": {
-        "l1_alpha":1e-4,
+        "l1_alpha":8e-4,
         "l1_epochs": 30,
         "l1_no_l1_epochs": 1,
         "l1_lr": 5e-3,

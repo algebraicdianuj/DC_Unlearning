@@ -1,4 +1,11 @@
 {
+    "acf_unlearning": {
+        "af_epochs": 1,
+        "acf_lr": 2.4e-4,
+        "weight_distribution": 34.0,          
+        "k": 2.0,
+        "K": 60.0
+    },
     "retraining": {
         "retrain_lr": null,
         "retrain_epochs": 100,

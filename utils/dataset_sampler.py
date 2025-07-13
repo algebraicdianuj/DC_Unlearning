@@ -24,30 +24,87 @@ def extract_features(model, dataloader, device):
 
 
 
+# def kmeans_pytorch(X, num_clusters, num_iterations=100, tol=1e-4):
+#     N, D = X.shape
+    
+#     # Randomly initialize cluster centers
+#     C = X[torch.randperm(N)[:num_clusters]]
+    
+#     for i in range(num_iterations):
+#         # Compute distances
+#         distances = torch.cdist(X, C)
+        
+#         # Assign points to nearest cluster
+#         labels = torch.argmin(distances, dim=1)
+        
+#         # Update cluster centers
+#         new_C = torch.stack([X[labels == k].mean(dim=0) for k in range(num_clusters)])
+        
+#         # Check for convergence
+#         if torch.abs(new_C - C).sum() < tol:
+#             break
+        
+#         C = new_C
+    
+#     return labels
+    
+
+import torch
+
 def kmeans_pytorch(X, num_clusters, num_iterations=100, tol=1e-4):
+    """
+    K-means with k-means++ init and empty-cluster re-seeding.
+    X:       (N, D) tensor of features
+    returns: labels (N,) with values in [0, num_clusters)
+    """
     N, D = X.shape
-    
-    # Randomly initialize cluster centers
-    C = X[torch.randperm(N)[:num_clusters]]
-    
-    for i in range(num_iterations):
-        # Compute distances
-        distances = torch.cdist(X, C)
-        
-        # Assign points to nearest cluster
-        labels = torch.argmin(distances, dim=1)
-        
-        # Update cluster centers
-        new_C = torch.stack([X[labels == k].mean(dim=0) for k in range(num_clusters)])
-        
-        # Check for convergence
-        if torch.abs(new_C - C).sum() < tol:
+    device = X.device
+
+    # --- 1) k-means++ initialization ---
+    centroids = torch.empty((num_clusters, D), device=device)
+    # 1.1 pick first centroid uniformly
+    first_idx = torch.randint(0, N, (1,), device=device)
+    centroids[0] = X[first_idx]
+
+    # keep track of min squared distances to any chosen centroid
+    closest_dist_sq = torch.full((N,), float('inf'), device=device)
+
+    for c in range(1, num_clusters):
+        # update distance to nearest existing centroid
+        dist_to_new = torch.sum((X - centroids[c-1])**2, dim=1)
+        closest_dist_sq = torch.minimum(closest_dist_sq, dist_to_new)
+
+        # sample next centroid proportional to squared distance
+        probs = closest_dist_sq / torch.sum(closest_dist_sq)
+        next_idx = torch.multinomial(probs, 1)
+        centroids[c] = X[next_idx]
+
+    # --- 2) standard k-means loop ---
+    for it in range(num_iterations):
+        # 2.1 assign labels
+        # (N, num_clusters)
+        dists = torch.cdist(X, centroids, p=2)
+        labels = torch.argmin(dists, dim=1)
+
+        # 2.2 compute new centroids, with handling for empty clusters
+        new_centroids = torch.zeros_like(centroids)
+        for k in range(num_clusters):
+            mask = (labels == k)
+            if mask.any():
+                new_centroids[k] = X[mask].mean(dim=0)
+            else:
+                # empty cluster: re-seed to a random point
+                rand_idx = torch.randint(0, N, (1,), device=device)
+                new_centroids[k] = X[rand_idx]
+
+        # 2.3 check for convergence
+        shift = torch.norm(new_centroids - centroids, dim=1).sum()
+        centroids = new_centroids
+        if shift < tol:
             break
-        
-        C = new_C
-    
+
     return labels
-    
+
 
 
 
@@ -58,81 +115,44 @@ def create_sub_classes(inputs,
                        sub_divisions=10,
                        device=torch.device('cuda')):
 
-
+    # 1) Prepare
     new_labels = torch.zeros_like(labels)
-    
-    indices_train_wrt_finelabels = {}
-    
-    model.to(device)
+    total_fine = num_classes * sub_divisions
 
+    # pre-populate every possible fine-label with an empty list
+    indices_train_wrt_finelabels = {fine: [] for fine in range(total_fine)}
+
+    model.to(device)
     dataset = TensorDatasett(inputs, labels)
     loader = DataLoader(dataset, batch_size=256, shuffle=False)
     features_all, _ = extract_features(model, loader, device)
-    
+
+    # 2) Run K-means per coarse class
     for i in range(num_classes):
         mask = (labels == i)
-        class_features = features_all[mask]
-        
-        
-        class_new_labels = kmeans_pytorch(
-            class_features, 
-            num_clusters=sub_divisions
-        )
-        
-        # Create sublabels
+        class_feats = features_all[mask]
+
+        # get sub_divisions cluster‐IDs in [0, sub_divisions)
+        class_new_labels = kmeans_pytorch(class_feats, num_clusters=sub_divisions)
+
+        # offset them to global fine‐label range
         new_subclass_labels = i * sub_divisions + class_new_labels
-        
-        # Assign new labels
         new_labels[mask] = new_subclass_labels
 
+    # 3) Build indices dict over **all** fine-label IDs
+    for fine in range(total_fine):
+        idxs = torch.where(new_labels == fine)[0]
+        # if idxs is empty, .tolist() is []
+        indices_train_wrt_finelabels[fine] = idxs.tolist()
 
-    new_labels_unique = torch.unique(new_labels).tolist()
-    
-    subclass_info = {}  # Will store centroid, radius, epsilon for each fine label
-    
-    for fine_label in new_labels_unique:
-        # Indices of data belonging to this fine-label
-        idxs = torch.where(new_labels == fine_label)[0]
-        indices_train_wrt_finelabels[fine_label] = idxs.tolist()
-        
-        # Ref: I call sub-class or fine label or clusters the same thing, and call features as points
-        #  Compute centroid, radius, epsilon in feature space
-        #  - centroid is the mean of each cluster features
-        #  - radius is max distance from centroid to any known point in cluster
-        #  - epsilon is the minimum pairwise distance among points in that sub-class
-        #  - I assign the epislon as 1/3 of minimum distance among points in that sub-class
-        
-        feats = features_all[idxs]  # shape: (n, D)
-        if len(feats) == 0:
-            subclass_info[fine_label] = {
-                'centroid': None,
-                'radius': 0.0,
-                'epsilon': 0.0
-            }
-            continue
-        
-        centroid = feats.mean(dim=0)   # shape (feature)
-        
-        dists = torch.norm(feats - centroid, dim=1)   # shape (num points)
-        radius = dists.max().item()   # scaler
-        
+    # 4) Compute subclass_info only for non-empty clusters
+    subclass_info = {}
+ 
 
-        if len(feats) == 1:
-            epsilon = 1e-5
-        else:
-            dist_mat = torch.cdist(feats, feats, p=2)  # shape (n, n)
-            # Exclude diagonal by setting it to a large number or filtering
-            dist_mat.fill_diagonal_(float('inf'))
-            epsilon = dist_mat.min().item()
-            epsilon = epsilon/3
-        
-        subclass_info[fine_label] = {
-            'centroid': centroid,
-            'radius': radius,
-            'epsilon': epsilon
-        }
-    
     return new_labels, indices_train_wrt_finelabels, subclass_info
+
+
+
 
 
 def dataset_sampling(

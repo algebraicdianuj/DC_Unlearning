@@ -38,6 +38,9 @@ from unlearn_methods.prunning import unlearn_with_pruning
 from unlearn_methods.bad_distillation import blindspot_unlearner
 from unlearn_methods.ntk_scrubbing import ntk_scrubbing
 from unlearn_methods.fisher_forget import fisher_forgetting
+from unlearn_methods.accelerated_cf import Accelerated_CF_Unlearner
+from unlearn_methods.accelerated_scrub import Accelerated_SCRUB_Unlearner
+from unlearn_methods.accelerated_sparisification import Accelerated_Sparse_Unlearner
 from unlearn_methods.scrub import scrub_model
 from unlearn_methods.ssd import ssd_unlearn
 from unlearn_methods.ssd_lf import ssdlf_unlearn
@@ -113,16 +116,20 @@ def main(args):
  
     test_loader=torch.utils.data.DataLoader(dst_test, batch_size=batch_size, shuffle=True)
 
-    do_retrain=True
+    # divide dst_test into used and unused parts
+    test_split_ratio = 0.7
+    used_size=int(test_split_ratio*len(dst_test))
+    dst_test_used, dst_test = torch.utils.data.random_split(dst_test, [used_size, len(dst_test)-used_size])
+    test_loader=torch.utils.data.DataLoader(dst_test, batch_size=batch_size, shuffle=True)
+
+
+    do_acatf=True
     do_CF=True
-    do_fisher=False
-    do_ssd=True
-    do_ssd_lf=True
-    do_distillation=False
     do_scrub=True
-    do_bad_distillation=True
-    do_l1_sparsity=True
-    do_pruning=True
+    do_ascrub=True
+    do_sparsity=True
+    do_asparse=True
+
 
     json_file_name=f'hyperparameters/{args.dataset}_{args.model_name}_cond_hyperparameters.json'
     params = load_hyperparameters(json_file_name, args)
@@ -151,6 +158,8 @@ def main(args):
     indices=list(range(len(train_images)))
     
     feature_extractor = get_model(args.feature_model_name, args.exp, data_storage, num_classes, device, load=False)
+    if device.type == 'cuda':
+        torch.cuda.synchronize()
     feat_sampe_time_init = time.time()
     fine_lab_train, indices_train_wrt_finelabels,_ = create_sub_classes(train_images, 
                                                                     train_labels, 
@@ -159,6 +168,8 @@ def main(args):
                                                                     sub_divisions=n_subclasses, 
                                                                     device=device)
 
+    if device.type == 'cuda':
+        torch.cuda.synchronize()
     feat_sampe_time_end = time.time()
     feat_sampe_time = feat_sampe_time_end - feat_sampe_time_init
     del feature_extractor
@@ -250,10 +261,12 @@ def main(args):
         #-------------------------------------------------------------------------------------------------------------------------------
         
         lr_b = -2.397e-06*(args.ipc)**3 + 0.01265*(args.ipc)**2 - 0.2558*(args.ipc) + 1.461
-        num_iterations_b = 20
+        num_iterations_b = 12
         
         net = get_model(args.feature_model_name, args.exp, data_storage, num_classes, device, load=False)
 
+        if device.type == 'cuda':
+            torch.cuda.synchronize()
         c_begin_time = time.time()
 
         # ----------------------Pixel Dataset Condensation---------------------------------------------------------------------------------
@@ -267,6 +280,8 @@ def main(args):
                                                     batch_size=32
                                                     )
         
+        if device.type == 'cuda':
+            torch.cuda.synchronize()
         c_end_time = time.time()
         cond_time = c_end_time - c_begin_time
         print('Condensation Time: ', cond_time)
@@ -279,25 +294,38 @@ def main(args):
         comp_ratio = len(condensed_loader.dataset)/len(retain_set)
         print("\n\n>> Ratio of Reduced Retain Set to Retain Set: ", comp_ratio)
 
-
-
-
-        if do_retrain:
-            #--------------------------Retraining Method------------------------------------------------------------------------------------
-            naive_net= get_model(args.model_name, args.exp, data_storage, num_classes, device, load=False)
+        
+        
+        # _______________________________________________________________________________________________________________________________
+        if do_acatf:
+            #--------------------------Accelerated Catastrophic Forgetting Method - V1-----------------------------------------------------------
+            if round_num == 0:
+                naive_net=get_model(args.model_name, args.exp, data_storage, num_classes, device, load=True)
+            else:
+                naive_net=get_model(args.model_name+'acf', args.exp, data_storage, num_classes, device, load=True)
+            
+            if device.type == 'cuda':
+                torch.cuda.synchronize()
             starting_time = time.time()
-            naive_net= retraining(
-                                naive_net, 
-                                criterion, 
-                                device, 
-                                retrain_lr, 
-                                retrain_momentum,
-                                retrain_weight_decay,
-                                retrain_warmup,
-                                retrain_epochs, 
-                                condensed_loader,
-                                decreasing_lr="50,75"
-                                )
+            #----------------------Unlearning with sampled dataset--------------------------------------------------------------------------------------
+            unlearner = Accelerated_CF_Unlearner(
+                            original_model=naive_net,
+                            retain_dataloader=condensed_loader,
+                            forget_dataset=forget_loader.dataset,
+                            test_dataset=dst_test_used,
+                            weight_distribution=weight_distribution,
+                            k=k,
+                            K=K,
+                            device=device
+                            )
+
+
+            model_unlearned = unlearner.train(epochs=af_epochs, 
+                                            learning_rate=acf_lr)
+            
+            
+            if device.type == 'cuda':
+                torch.cuda.synchronize()
             ending_time = time.time()
             unlearning_time=ending_time - starting_time
             if round_num == 0:
@@ -305,12 +333,17 @@ def main(args):
             else:
                 unlearning_time+=cond_time
 
-            mia_score=LiRA_MIA(naive_net, forget_loader,test_loader, nn.CrossEntropyLoss(reduction='none'), num_classes, device)
-            retain_acc=test(naive_net, retain_loader, device)
-            forget_acc=test(naive_net, forget_loader, device)
-            test_acc=test(naive_net, test_loader, device)
+            file_path = os.path.join(data_storage, f'pretrained_{args.model_name}acf_exp_{args.exp}.pth')
+            torch.save(model_unlearned.state_dict(), file_path)
 
-            print('\nRetraining-Unlearning Stats (Condensed): ')
+
+            mia_score=LiRA_MIA(model_unlearned, forget_loader, test_loader, nn.CrossEntropyLoss(reduction='none'), num_classes, device)
+            retain_acc=test(model_unlearned, retain_loader, device)
+            forget_acc=test(model_unlearned, forget_loader, device)
+            test_acc=test(model_unlearned, test_loader, device)
+
+
+            print('\nAccelerated CF - V1 Stats: ')
             print('======================================')
             print('mia_score: ', mia_score)
             print('retain_acc: ', retain_acc)
@@ -318,6 +351,7 @@ def main(args):
             print('test_acc: ', test_acc)
             print('unlearning_time: ', unlearning_time)
             print('======================================')
+
 
             stat_data = {
                 'mia_score': [mia_score],
@@ -329,14 +363,174 @@ def main(args):
 
             df = pd.DataFrame(stat_data)
 
-            save_data3(result_directory_path, 'retraining_cond', df, args.model_name, args.exp, choice, round_num)
 
-        
+            save_data3(result_directory_path, 'acatf_cond', df, args.model_name, args.exp, choice, round_num)
+            #-------------------------------------------------------------------------------------------------------------------------------
+
+        #_______________________________________________________________________________________________________________________________
+
+
+
+        # _______________________________________________________________________________________________________________________________
+        if do_asparse:
+            #--------------------------Accelerated Catastrophic Forgetting Method - V1-----------------------------------------------------------
+            if round_num == 0:
+                naive_net=get_model(args.model_name, args.exp, data_storage, num_classes, device, load=True)
+            else:
+                naive_net=get_model(args.model_name+'asparse', args.exp, data_storage, num_classes, device, load=True)
+
+            starting_time = time.time()
+            #----------------------Unlearning with sampled dataset--------------------------------------------------------------------------------------
+            unlearner = Accelerated_Sparse_Unlearner(
+                            original_model=naive_net,
+                            retain_dataloader=condensed_loader,
+                            forget_dataset=forget_loader.dataset,
+                            test_dataset=dst_test_used,
+                            weight_distribution=asparse_weight_distribution,
+                            weight_sparsity = asparse_l1_alpha,
+                            k=asparse_k,
+                            K=asparse_K,
+                            device=device
+                            )
+
+
+            model_unlearned = unlearner.train(epochs=af_epochs, 
+                                            learning_rate=asparse_lr)
+            
+            ending_time = time.time()
+            unlearning_time=ending_time - starting_time
+            if round_num == 0:
+                unlearning_time+=cond_time+feat_sampe_time
+            else:
+                unlearning_time+=cond_time
+                
+            file_path = os.path.join(data_storage, f'pretrained_{args.model_name}asparse_exp_{args.exp}.pth')
+            torch.save(model_unlearned.state_dict(), file_path)
+
+                
+            mia_score=LiRA_MIA(model_unlearned, forget_loader, test_loader, nn.CrossEntropyLoss(reduction='none'), num_classes, device)
+            retain_acc=test(model_unlearned, retain_loader, device)
+            forget_acc=test(model_unlearned, forget_loader, device)
+            test_acc=test(model_unlearned, test_loader, device)
+
+
+            print('\nAccelerated Sparse - V1 Stats: ')
+            print('======================================')
+            print('mia_score: ', mia_score)
+            print('retain_acc: ', retain_acc)
+            print('forget_acc: ', forget_acc)
+            print('test_acc: ', test_acc)
+            print('unlearning_time: ', unlearning_time)
+            print('======================================')
+
+
+            stat_data = {
+                'mia_score': [mia_score],
+                'retain_acc': [retain_acc],
+                'forget_acc': [forget_acc],
+                'test_acc': [test_acc],
+                'unlearning_time': [unlearning_time]
+            }
+
+            df = pd.DataFrame(stat_data)
+
+
+            save_data3(result_directory_path, 'asparsef_cond', df, args.model_name, args.exp, choice, round_num)
+            #-------------------------------------------------------------------------------------------------------------------------------
+
+        #_______________________________________________________________________________________________________________________________
+
+
+        # _______________________________________________________________________________________________________________________________
+        if do_ascrub:
+            #--------------------------Accelerated Catastrophic Forgetting Method - V1-----------------------------------------------------------
+            if round_num == 0:
+                student_net= get_model(args.model_name, args.exp, data_storage, num_classes, device, load=True)
+                teacher_net= get_model(args.model_name, args.exp, data_storage, num_classes, device, load=True)
+
+            else:
+                student_net= get_model(args.model_name+'ascrub', args.exp, data_storage, num_classes, device, load=True)
+                teacher_net= get_model(args.model_name+'ascrub', args.exp, data_storage, num_classes, device, load=True)
+                
+
+            if device.type == 'cuda':
+                torch.cuda.synchronize()    
+            starting_time = time.time()
+            #----------------------Unlearning with sampled dataset--------------------------------------------------------------------------------------
+            unlearner = Accelerated_SCRUB_Unlearner(
+                            student_model=student_net,
+                            teacher_model=teacher_net, 
+                            retain_dataloader=retain_loader,
+                            forget_dataset=forget_loader.dataset,
+                            test_dataset=dst_test_used,
+                            weight_distribution=ascrub_weight_distribution,
+                            weight_gamma = ascrub_gamma,
+                            weight_beta = ascrub_beta,
+                            kd_temp = ascrub_kd_T,
+                            k=asparse_k,
+                            K=asparse_K,
+                            device=device
+                            )
+
+
+            model_unlearned = unlearner.train(epochs=af_epochs, 
+                                            learning_rate=ascrub_lr)
+            
+            if device.type == 'cuda':
+                torch.cuda.synchronize()
+            ending_time = time.time()
+            unlearning_time=ending_time - starting_time
+            if round_num == 0:
+                unlearning_time+=cond_time+feat_sampe_time
+            else:
+                unlearning_time+=cond_time
+                
+            file_path = os.path.join(data_storage, f'pretrained_{args.model_name}ascrub_exp_{args.exp}.pth')
+            torch.save(model_unlearned.state_dict(), file_path)
+
+            
+            mia_score=LiRA_MIA(model_unlearned, forget_loader, test_loader, nn.CrossEntropyLoss(reduction='none'), num_classes, device)
+            retain_acc=test(model_unlearned, retain_loader, device)
+            forget_acc=test(model_unlearned, forget_loader, device)
+            test_acc=test(model_unlearned, test_loader, device)
+
+
+            print('\nAccelerated SCRUB - V1 Stats: ')
+            print('======================================')
+            print('mia_score: ', mia_score)
+            print('retain_acc: ', retain_acc)
+            print('forget_acc: ', forget_acc)
+            print('test_acc: ', test_acc)
+            print('unlearning_time: ', unlearning_time)
+            print('======================================')
+
+
+            stat_data = {
+                'mia_score': [mia_score],
+                'retain_acc': [retain_acc],
+                'forget_acc': [forget_acc],
+                'test_acc': [test_acc],
+                'unlearning_time': [unlearning_time]
+            }
+
+            df = pd.DataFrame(stat_data)
+
+
+            save_data3(result_directory_path, 'ascrubf_cond', df, args.model_name, args.exp, choice, round_num)
+            #-------------------------------------------------------------------------------------------------------------------------------
+
+        #_______________________________________________________________________________________________________________________________
+
 
         if do_CF:
 
             #----------------------Catastrophic Forgetting Method---------------------------------------------------------------------------------
-            naive_net=get_model(args.model_name, args.exp, data_storage, num_classes, device, load=True)
+            if round_num == 0:
+                naive_net=get_model(args.model_name, args.exp, data_storage, num_classes, device, load=True)
+            else:
+                naive_net=get_model(args.model_name+'cf', args.exp, data_storage, num_classes, device, load=True)
+
+
             starting_time = time.time()
             naive_net= retraining(naive_net, 
                                 criterion, 
@@ -356,6 +550,8 @@ def main(args):
             else:
                 unlearning_time+=cond_time
 
+            file_path = os.path.join(data_storage, f'pretrained_{args.model_name}cf_exp_{args.exp}.pth')
+            torch.save(naive_net.state_dict(), file_path)
 
             mia_score=LiRA_MIA(naive_net, forget_loader,test_loader, nn.CrossEntropyLoss(reduction='none'), num_classes, device)
             retain_acc=test(naive_net, retain_loader, device)
@@ -387,64 +583,22 @@ def main(args):
 
 
 
-        if do_distillation:
-            #-----------------------Distillation based Method---------------------------------------------------------------------------------
-            teacher_net= get_model(args.model_name, args.exp, data_storage, num_classes, device, load=True)
-            student_net= get_model(args.model_name, args.exp, data_storage, num_classes, device, load=True)
-            starting_time = time.time()
-            distilled_net = distillation_unlearning(condensed_loader, 
-                                                    distill_lr ,
-                                                    distill_momentum,
-                                                    distill_weight_decay,
-                                                    student_net, 
-                                                    teacher_net, 
-                                                    distill_epochs, 
-                                                    device, 
-                                                    alpha=distill_hard_weight, 
-                                                    gamma=distill_soft_weight, 
-                                                    kd_T=distill_kdT,
-                                                    decreasing_lr="50,75"
-                                                    )
-            ending_time = time.time()
-            unlearning_time=ending_time - starting_time
-            if round_num == 0:
-                unlearning_time+=cond_time+feat_sampe_time
-            else:
-                unlearning_time+=cond_time
-
-
-            mia_score=LiRA_MIA(distilled_net, forget_loader, test_loader, nn.CrossEntropyLoss(reduction='none'), num_classes, device)
-            retain_acc=test(distilled_net, retain_loader, device)
-            forget_acc=test(distilled_net, forget_loader, device)
-            test_acc=test(distilled_net, test_loader, device)
-
-            print('\nDistillation-Unlearning Stats (Condensed): ')
-            print('======================================')
-            print('mia_score: ', mia_score)
-            print('retain_acc: ', retain_acc)
-            print('forget_acc: ', forget_acc)
-            print('test_acc: ', test_acc)
-            print('unlearning_time: ', unlearning_time)
-            print('======================================')
-
-            stat_data = {
-                'mia_score': [mia_score],
-                'retain_acc': [retain_acc],
-                'forget_acc': [forget_acc],
-                'test_acc': [test_acc],
-                'unlearning_time': [unlearning_time]
-            }
-
-            df = pd.DataFrame(stat_data)
-
-            save_data3(result_directory_path, 'distillation_cond', df, args.model_name, args.exp, choice, round_num)
 
 
 
         if do_scrub:
             #-----------------------SCRUB Method---------------------------------------------------------------------------------
-            student_net= get_model(args.model_name, args.exp, data_storage, num_classes, device, load=True)
-            teacher_net= get_model(args.model_name, args.exp, data_storage, num_classes, device, load=True)
+            # student_net= get_model(args.model_name, args.exp, data_storage, num_classes, device, load=True)
+            # teacher_net= get_model(args.model_name, args.exp, data_storage, num_classes, device, load=True)
+            
+            if round_num == 0:
+                student_net= get_model(args.model_name, args.exp, data_storage, num_classes, device, load=True)
+                teacher_net= get_model(args.model_name, args.exp, data_storage, num_classes, device, load=True)
+
+            else:
+                student_net= get_model(args.model_name+'scrub', args.exp, data_storage, num_classes, device, load=True)
+                teacher_net= get_model(args.model_name+'scrub', args.exp, data_storage, num_classes, device, load=True)
+        
             starting_time = time.time()
 
 
@@ -474,6 +628,10 @@ def main(args):
             else:
                 unlearning_time+=cond_time
 
+            file_path = os.path.join(data_storage, f'pretrained_{args.model_name}scrub_exp_{args.exp}.pth')
+            torch.save(distilled_net.state_dict(), file_path)
+
+
 
             mia_score=LiRA_MIA(distilled_net, forget_loader, test_loader, nn.CrossEntropyLoss(reduction='none'), num_classes, device)
             retain_acc=test(distilled_net, retain_loader, device)
@@ -502,66 +660,18 @@ def main(args):
             save_data3(result_directory_path, 'SCRUB_cond', df, args.model_name, args.exp, choice, round_num)
 
 
-        if do_bad_distillation:
-            #-----------------------Bad Teacher based Distillation Method---------------------------------------------------------------------------------
-            teacher_net= get_model(args.model_name, args.exp, data_storage, num_classes, device, load=True)
-            student_net= get_model(args.model_name, args.exp, data_storage, num_classes, device, load=True)
-            bad_teacher_net= get_model(args.model_name, args.exp, data_storage, num_classes, device, load=False)
-            starting_time = time.time()
-            # sample the retain_set_real by partial_retain_ratio (for bad distillation)
-            partial_retain_set_condensed = condensed_dataset
-            distilled_net=blindspot_unlearner(model=student_net, 
-                                            unlearning_teacher=bad_teacher_net, 
-                                            full_trained_teacher=teacher_net, 
-                                            retain_data=partial_retain_set_condensed,
-                                            forget_data=forget_set, 
-                                            epochs = bad_distill_epochs,
-                                            lr = bad_distill_lr,
-                                            momentum = bad_momentum,
-                                            weight_decay = bad_distill_weight_decay,
-                                            batch_size = batch_size, 
-                                            device = device, 
-                                            KL_temperature = bad_kdT
-                                            )
-            
-            ending_time = time.time()
-            unlearning_time=ending_time - starting_time
-            if round_num == 0:
-                unlearning_time+=cond_time+feat_sampe_time
-            else:
-                unlearning_time+=cond_time
 
 
-            mia_score=LiRA_MIA(distilled_net, forget_loader, test_loader, nn.CrossEntropyLoss(reduction='none'), num_classes, device)
-            retain_acc=test(distilled_net, retain_loader, device)
-            forget_acc=test(distilled_net, forget_loader, device)
-            test_acc=test(distilled_net, test_loader, device)
 
-            print('\nBad Teacher Distillation-Unlearning Stats (Condensed): ')
-            print('======================================')
-            print('mia_score: ', mia_score)
-            print('retain_acc: ', retain_acc)
-            print('forget_acc: ', forget_acc)
-            print('test_acc: ', test_acc)
-            print('unlearning_time: ', unlearning_time)
-            print('======================================')
-
-            stat_data = {
-                'mia_score': [mia_score],
-                'retain_acc': [retain_acc],
-                'forget_acc': [forget_acc],
-                'test_acc': [test_acc],
-                'unlearning_time': [unlearning_time]
-            }
-
-            df = pd.DataFrame(stat_data)
-
-            save_data3(result_directory_path, 'Bad_distillation_cond', df, args.model_name, args.exp, choice, round_num)
-
-
-        if do_l1_sparsity:
+        if do_sparsity:
             #-----------------------Sparsification based Method---------------------------------------------------------------------------------
-            naive_net= get_model(args.model_name, args.exp, data_storage, num_classes, device, load=True)
+            # naive_net= get_model(args.model_name, args.exp, data_storage, num_classes, device, load=True)
+            if round_num == 0:
+                naive_net= get_model(args.model_name, args.exp, data_storage, num_classes, device, load=True)
+            else:
+                naive_net= get_model(args.model_name+'sparsity', args.exp, data_storage, num_classes, device, load=True)
+        
+
             starting_time = time.time()
             sparsified_net = unlearn_with_l1_sparsity(
                                                 naive_net, 
@@ -585,6 +695,10 @@ def main(args):
                 unlearning_time+=cond_time+feat_sampe_time
             else:
                 unlearning_time+=cond_time
+
+            file_path = os.path.join(data_storage, f'pretrained_{args.model_name}sparsity_exp_{args.exp}.pth')
+            torch.save(sparsified_net.state_dict(), file_path)
+
 
             mia_score=LiRA_MIA(sparsified_net, forget_loader, test_loader, nn.CrossEntropyLoss(reduction='none'), num_classes, device)
             retain_acc=test(sparsified_net, retain_loader, device)
@@ -612,59 +726,6 @@ def main(args):
 
             save_data3(result_directory_path, 'L1_sparsity_cond', df, args.model_name, args.exp, choice, round_num)
 
-
-
-        if do_pruning:
-            #-----------------------Pruning based Method---------------------------------------------------
-            naive_net= get_model(args.model_name, args.exp, data_storage, num_classes, device, load=True)
-            starting_time = time.time()
-
-            pruned_net = unlearn_with_pruning(
-                                            naive_net,
-                                            condensed_loader, 
-                                            unlearn_epochs=prune_epochs, 
-                                            target_sparsity=prune_target_sparsity, 
-                                            learning_rate=prune_lr,
-                                            momentum = prune_momentum, 
-                                            weight_decay=prune_weight_decay,
-                                            prune_step=prune_step,
-                                            decreasing_lr="50,75",
-                                            print_freq=50,
-                                            device=device)
-
-            ending_time = time.time()
-            unlearning_time=ending_time - starting_time
-            if round_num == 0:
-                unlearning_time+=cond_time+feat_sampe_time
-            else:
-                unlearning_time+=cond_time
-
-
-            mia_score=LiRA_MIA(pruned_net, forget_loader, test_loader, nn.CrossEntropyLoss(reduction='none'), num_classes, device)
-            retain_acc=test(pruned_net, condensed_loader, device)
-            forget_acc=test(pruned_net, forget_loader, device)
-            test_acc=test(pruned_net, test_loader, device)
-
-            print('\nPrunning-Unlearning Stats (Condensed): ')
-            print('======================================')
-            print('mia_score: ', mia_score)
-            print('retain_acc: ', retain_acc)
-            print('forget_acc: ', forget_acc)
-            print('test_acc: ', test_acc)
-            print('unlearning_time: ', unlearning_time)
-            print('======================================')
-
-            stat_data = {
-                'mia_score': [mia_score],
-                'retain_acc': [retain_acc],
-                'forget_acc': [forget_acc],
-                'test_acc': [test_acc],
-                'unlearning_time': [unlearning_time]
-            }
-
-            df = pd.DataFrame(stat_data)
-
-            save_data3(result_directory_path, 'pruning_cond', df, args.model_name, args.exp, choice, round_num)
 
 
 

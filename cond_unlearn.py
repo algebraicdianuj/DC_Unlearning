@@ -39,6 +39,7 @@ from unlearn_methods.bad_distillation import blindspot_unlearner
 from unlearn_methods.ntk_scrubbing import ntk_scrubbing
 from unlearn_methods.fisher_forget import fisher_forgetting
 from unlearn_methods.scrub import scrub_model
+from unlearn_methods.accelerated_cf import Accelerated_CF_Unlearner
 from unlearn_methods.ssd import ssd_unlearn
 from unlearn_methods.ssd_lf import ssdlf_unlearn
 from utils.loading_model import get_model
@@ -113,6 +114,16 @@ def main(args):
  
     test_loader=torch.utils.data.DataLoader(dst_test, batch_size=batch_size, shuffle=True)
 
+    # divide dst_test into used and unused parts
+    test_split_ratio = 0.7
+    used_size=int(test_split_ratio*len(dst_test))
+    dst_test_used, dst_test = torch.utils.data.random_split(dst_test, [used_size, len(dst_test)-used_size])
+    test_loader=torch.utils.data.DataLoader(dst_test, batch_size=batch_size, shuffle=True)
+
+
+
+
+    do_acatf=True
     do_retrain=True
     do_CF=True
     do_fisher=False
@@ -276,7 +287,7 @@ def main(args):
     #-------------------------------------------------------------------------------------------------------------------------------
     
     lr_b = -2.397e-06*(args.ipc)**3 + 0.01265*(args.ipc)**2 - 0.2558*(args.ipc) + 1.461
-    num_iterations_b = 20
+    num_iterations_b = 12
     
     net = get_model(args.feature_model_name, args.exp, data_storage, num_classes, device, load=False)
 
@@ -301,6 +312,62 @@ def main(args):
     print("\n\n>> Ratio of Reduced Retain Set to Retain Set: ", comp_ratio)
 
 
+
+
+    # _______________________________________________________________________________________________________________________________
+    if do_acatf:
+        #--------------------------Accelerated Catastrophic Forgetting Method - V1-----------------------------------------------------------
+        naive_net=get_model(args.model_name, args.exp, data_storage, num_classes, device, load=True)
+        starting_time = time.time()
+        #----------------------Unlearning with sampled dataset--------------------------------------------------------------------------------------
+        unlearner = Accelerated_CF_Unlearner(
+                        original_model=naive_net,
+                        retain_dataloader=condensed_loader,
+                        forget_dataset=forget_loader.dataset,
+                        test_dataset=dst_test_used,
+                        weight_distribution=weight_distribution,
+                        k=k,
+                        K=K,
+                        device=device
+                        )
+
+
+        model_unlearned = unlearner.train(epochs=af_epochs, 
+                                        learning_rate=acf_lr)
+        
+        ending_time = time.time()
+        unlearning_time=ending_time - starting_time
+        mia_score=LiRA_MIA(model_unlearned, forget_loader, test_loader, nn.CrossEntropyLoss(reduction='none'), num_classes, device)
+        retain_acc=test(model_unlearned, retain_loader, device)
+        forget_acc=test(model_unlearned, forget_loader, device)
+        test_acc=test(model_unlearned, test_loader, device)
+
+
+        print('\nAccelerated CF - V1 Stats: ')
+        print('======================================')
+        print('mia_score: ', mia_score)
+        print('retain_acc: ', retain_acc)
+        print('forget_acc: ', forget_acc)
+        print('test_acc: ', test_acc)
+        print('unlearning_time: ', unlearning_time)
+        print('======================================')
+
+
+        stat_data = {
+            'mia_score': [mia_score],
+            'retain_acc': [retain_acc],
+            'forget_acc': [forget_acc],
+            'test_acc': [test_acc],
+            'unlearning_time': [unlearning_time]
+        }
+
+        df = pd.DataFrame(stat_data)
+
+
+        save_data(result_directory_path, 'acatf_cond', df, args.model_name, args.exp, choice)
+        #-------------------------------------------------------------------------------------------------------------------------------
+
+    #_______________________________________________________________________________________________________________________________
 
 
     if do_retrain:
