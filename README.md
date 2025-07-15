@@ -125,6 +125,8 @@ Below are the different ablation configurations tested:
 
 - [Good and Bad Teacher Distillation based Unlearning](https://github.com/vikram2000b/bad-teaching-unlearning)
 
+- [Synaptic Forgetting](https://github.com/if-loops/selective-synaptic-dampening)
+
 
 
 ## SOTA Dataset Condensation References Used in this Repo
