@@ -136,10 +136,12 @@ Below are the different ablation configurations tested:
 
 
 
-## Further References
+## Further References Used in this Repo
 - [Dataset Condensation Driven Machine Unlearning](https://github.com/algebraicdianuj/DC_U)
 
-### 📌 Citation
+
+
+## Citation
 
 <pre>
 @article{khan2025leveraging,
