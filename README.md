@@ -134,6 +134,6 @@ Below are the different ablation configurations tested:
 
 
 ## Reference
-  This work is extensive revision of work [Dataset Condensation Driven Machine Unlearning](https://arxiv.org/abs/2402.00195)
+  This work is extensive revision of work [Dataset Condensation Driven Machine Unlearning](https://arxiv.org/abs/2402.00195) as [Leveraging Distribution Matching to Make Approximate Machine Unlearning Faster](https://arxiv.org/abs/2507.09786)
 
 
