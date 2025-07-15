@@ -5,26 +5,8 @@
 
 <h2>Abstract</h2>
 
-<div style="border:1px solid #d0d7de; border-radius:6px; padding:16px; background-color:#f6f8fa;">
-<p>
-Approximate machine unlearning (AMU) enables models to <i>forget</i> specific training data through specialized fine-tuning on a retained dataset subset. However, processing this retained subset still dominates computational runtime, while reductions of epochs also remain a challenge.
-</p>
-
-<p>
-We propose two complementary methods to accelerate classification-oriented AMU.
-</p>
-
-<p>
-<b>First,</b> <b>Blend</b>, a novel distribution-matching dataset condensation (DC), merges visually similar images with shared blend-weights to significantly reduce the retained set size. It operates with minimal pre-processing overhead and is orders of magnitude faster than state-of-the-art DC methods.
-</p>
-
-<p>
-<b>Second,</b> our loss-centric method, <b>Accelerated-AMU (A-AMU)</b>, augments the unlearning objective to quicken convergence. A-AMU achieves this by combining a steepened primary loss to expedite forgetting with a novel, differentiable regularizer that matches the loss distributions of forgotten and in-distribution unseen data.
-</p>
-
-<p>
-Our extensive experiments demonstrate that this dual approach of data- and loss-centric optimization dramatically reduces end-to-end unlearning latency across both single and multi-round scenarios, all while preserving model utility and privacy. To our knowledge, this is the first work to systematically tackle unlearning efficiency by jointly designing a specialized dataset condensation technique with a dedicated accelerated loss function.
-</p>
+<div style="background-color:#2f2f2f; color:#f0f0f0; padding:16px; border-radius:8px; font-size:15px; line-height:1.5em;">
+Approximate machine unlearning (AMU) enables models to <i>forget</i> specific training data through specialized fine-tuning on a retained dataset subset. However, processing this retained subset still dominates computational runtime, while reductions of epochs also remain a challenge. We propose two complementary methods to accelerate classification-oriented AMU. <b>Blend</b>, a novel distribution-matching dataset condensation (DC), merges visually similar images with shared blend-weights to significantly reduce the retained set size. It operates with minimal pre-processing overhead and is orders of magnitude faster than state-of-the-art DC methods. Our second method, <b>Accelerated-AMU (A-AMU)</b>, augments the unlearning objective to quicken convergence. A-AMU achieves this by combining a steepened primary loss to expedite forgetting with a novel, differentiable regularizer that matches the loss distributions of forgotten and in-distribution unseen data. Together, these methods dramatically reduce unlearning latency across both single and multi-round settings while preserving model utility and privacy.
 </div>
 
 
