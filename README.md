@@ -136,4 +136,23 @@ Below are the different ablation configurations tested:
 
 
 
+## Further References
+- [Dataset Condensation Driven Machine Unlearning](https://github.com/algebraicdianuj/DC_U)
+
+### 📌 Citation
+
+<pre>
+@article{khan2025leveraging,
+  title={Leveraging Distribution Matching to Make Approximate Machine Unlearning Faster},
+  author={Khan, Junaid Iqbal},
+  journal={arXiv preprint arXiv:2507.09786},
+  year={2025},
+  url={https://arxiv.org/abs/2507.09786},
+  note={Submitted on 13 Jul 2025},
+}
+</pre>
+
+
+
+
 
