@@ -1,7 +1,31 @@
 # Leveraging Distribution Matching to Make Approximate Machine Unlearning Faster
-
+[![arXiv](https://img.shields.io/badge/arXiv-2507.09786-b31b1b.svg)](https://arxiv.org/abs/2507.09786)
 
 ![Distribution Matching for Machine Unlearning](./main_proposal.png)
+
+<h2>Abstract</h2>
+
+<div style="border:1px solid #d0d7de; border-radius:6px; padding:16px; background-color:#f6f8fa;">
+<p>
+Approximate machine unlearning (AMU) enables models to <i>forget</i> specific training data through specialized fine-tuning on a retained dataset subset. However, processing this retained subset still dominates computational runtime, while reductions of epochs also remain a challenge.
+</p>
+
+<p>
+We propose two complementary methods to accelerate classification-oriented AMU.
+</p>
+
+<p>
+<b>First,</b> <b>Blend</b>, a novel distribution-matching dataset condensation (DC), merges visually similar images with shared blend-weights to significantly reduce the retained set size. It operates with minimal pre-processing overhead and is orders of magnitude faster than state-of-the-art DC methods.
+</p>
+
+<p>
+<b>Second,</b> our loss-centric method, <b>Accelerated-AMU (A-AMU)</b>, augments the unlearning objective to quicken convergence. A-AMU achieves this by combining a steepened primary loss to expedite forgetting with a novel, differentiable regularizer that matches the loss distributions of forgotten and in-distribution unseen data.
+</p>
+
+<p>
+Our extensive experiments demonstrate that this dual approach of data- and loss-centric optimization dramatically reduces end-to-end unlearning latency across both single and multi-round scenarios, all while preserving model utility and privacy. To our knowledge, this is the first work to systematically tackle unlearning efficiency by jointly designing a specialized dataset condensation technique with a dedicated accelerated loss function.
+</p>
+</div>
 
 
 
@@ -129,11 +153,5 @@ Below are the different ablation configurations tested:
 - [Improved distribution matching for dataset condensation](https://github.com/uitrbn/IDM)
 
 
-## Main Source of Code
-- [Dataset Condensation Driven Machine Unlearning](https://github.com/algebraicdianuj/DC_U)
-
-
-## Reference
-  This work is extensive revision of work [Dataset Condensation Driven Machine Unlearning](https://arxiv.org/abs/2402.00195) as [Leveraging Distribution Matching to Make Approximate Machine Unlearning Faster](https://arxiv.org/abs/2507.09786)
 
 
