@@ -128,3 +128,12 @@ Below are the different ablation configurations tested:
   
 - [Improved distribution matching for dataset condensation](https://github.com/uitrbn/IDM)
 
+
+## Main Source of Code
+- [Dataset Condensation Driven Machine Unlearning](https://github.com/algebraicdianuj/DC_U)
+
+
+## Reference
+  This work is extensive revision of work [Dataset Condensation Driven Machine Unlearning](https://arxiv.org/abs/2402.00195)
+
+
