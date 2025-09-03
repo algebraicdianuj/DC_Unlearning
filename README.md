@@ -1,5 +1,4 @@
 # Leveraging Distribution Matching to Make Approximate Machine Unlearning Faster
-[![arXiv](https://img.shields.io/badge/arXiv-2507.09786-b31b1b.svg)](https://arxiv.org/abs/2507.09786)
 
 
 <h2>Abstract</h2>
