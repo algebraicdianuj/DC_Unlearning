@@ -1,7 +1,6 @@
 # Leveraging Distribution Matching to Make Approximate Machine Unlearning Faster
 [![arXiv](https://img.shields.io/badge/arXiv-2507.09786-b31b1b.svg)](https://arxiv.org/abs/2507.09786)
 
-![Distribution Matching for Machine Unlearning](./main_proposal.png)
 
 <h2>Abstract</h2>
 
@@ -141,20 +140,6 @@ Below are the different ablation configurations tested:
 ## Further References Used in this Repo
 - [Dataset Condensation Driven Machine Unlearning](https://github.com/algebraicdianuj/DC_U)
 
-
-
-## Citation
-
-<pre>
-@article{khan2025leveraging,
-  title={Leveraging Distribution Matching to Make Approximate Machine Unlearning Faster},
-  author={Khan, Junaid Iqbal},
-  journal={arXiv preprint arXiv:2507.09786},
-  year={2025},
-  url={https://arxiv.org/abs/2507.09786},
-  note={Submitted on 13 Jul 2025},
-}
-</pre>
 
 
 
