@@ -14,8 +14,8 @@ Approximate machine unlearning (AMU) enables models to <i>forget</i> specific tr
 ### Install Dependencies
 ```code
 git clone https://github.com/algebraicdianuj/DC_U.git && cd DC_U
-conda create -n DCU python=3.8.19
-conda activate DCU
+conda create -n torcher python=3.8.19
+conda activate torcher
 pip install torch==2.0.0+cu118 torchvision==0.15.1+cu118 torchaudio==2.0.1+cu118 --index-url https://download.pytorch.org/whl/cu118
 python -m pip install -U scikit-learn
 conda install scikit-image
