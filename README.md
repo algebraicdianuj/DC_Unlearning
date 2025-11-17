@@ -141,11 +141,6 @@ pip install timm
 | distillation | distill\_epochs: 50, distill\_hard\_weight: 1.0, distill\_soft\_weight: 0.001, distill\_kdt: 2.0, distill\_lr: 5e-3, distill\_momentum: 0.86, distill\_weight\_decay: 0.001 |
 | scrub | scrub\_beta: 0.001, scrub\_gamma: 0.99, scrub\_kd\_T: 2.0, scrub\_epochs: 15, scrub\_msteps: 10, scrub\_lr: 1e-3, scrub\_momentum: 0.9, scrub\_weight\_decay: 0.0005, scrub\_warmup: 5 |
 | bad\_distillation | bad\_kdT: 2.0, bad\_distill\_epochs: 20, partial\_retain\_ratio: 0.7234455830656301, bad\_distill\_lr: 5e-3, bad\_momentum: 0.9, bad\_distill\_weight\_decay: 0.0005 |
-
----
-
-| Method | Hyperparameters |
-| :--- | :--- |
 | 11\_sparsity | 11\_alpha: 1e-4, 11\_epochs: 30, 11\_no\_11\_epochs: 1, 11\_lr: 5e-3, 11\_momentum: 0.9, 11\_weight\_decay: 0.0005, 11\_warmup: 0 |
 | pruning | prune\_lr: 0.04, prune\_epochs: 20, prune\_target\_sparsity: 0.95, prune\_weight\_decay: 0.0005, prune\_momentum: 0.9, prune\_step: 5 |
 
@@ -170,13 +165,6 @@ pip install timm
 | distillation | distill\_epochs: 50, distill\_hard\_weight: 1.0, distill\_soft\_weight: 0.001, distill\_kdt: 2.0, distill\_lr: 0.04, distill\_momentum: 0.86, distill\_weight\_decay: 0.001 |
 | scrub | scrub\_beta: 0.001, scrub\_gamma: 0.99, scrub\_kd\_T: 2.0, scrub\_epochs: 15, scrub\_msteps: 5, scrub\_lr: 5e-3, scrub\_momentum: 0.9, scrub\_weight\_decay: 0.0005, scrub\_warmup: 5 |
 | bad\_distillation | bad\_kdT: 2.0, bad\_distill\_epochs: 20, partial\_retain\_ratio: 0.7234455830656301, bad\_distill\_lr: 5e-3, bad\_momentum: 0.9, bad\_distill\_weight\_decay: 0.0005 |
-
----
-
-The following table:
-
-| Method | Hyperparameters |
-| :--- | :--- |
 | 11\_sparsity | 11\_alpha: 1e-4, 11\_epochs: 30, 11\_no\_11\_epochs: 1, 11\_lr: 1e-2, 11\_momentum: 0.9, 11\_weight\_decay: 0.0005, 11\_warmup: 0 |
 | pruning | prune\_lr: 0.01, prune\_epochs: 20, prune\_target\_sparsity: 0.95, prune\_weight\_decay: 0.0005, prune\_momentum: 0.9, prune\_step: 5 |
 
