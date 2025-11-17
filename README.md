@@ -46,6 +46,102 @@ pip install timm
 
 
 
+
+## Experiment: Section 4.2
+```code
+./scripts/run_c_cifar10.sh
+```
+
+
+
+## Experiment: Section 4.3
+
+### CIFAR-10
+#### Without Condensation
+```code
+./scripts/run_u_cifar10.sh
+```
+#### With Condensation
+```code
+./scripts/run_cu_cifar10.sh
+```
+### SVHN
+#### Without Condensation
+```code
+./scripts/run_u_svhn.sh
+```
+
+#### With Condensation
+```code
+./scripts/run_cu_svhn.sh
+```
+
+
+
+## Experiment: Section 4.4
+
+### CINIC-10
+Below are the different ablation configurations tested:
+
+| ablative_ | Description |
+|---------|-------------|
+| v1.py | Condensing whole retain |
+| v2.py | Residual retain dataset|
+| v3.py | Condensing free images |
+| v4.py | Free images |
+| v5.py | Condensing residual images |
+| v6.py | Residual images |
+| v7.py | Retain images |
+
+```code
+./scripts/ablations.sh
+```
+
+
+## Experiment: Section 4.5
+### CINIC-10
+#### Without Condensation
+```code
+./scripts/multiround_unlearn.sh
+```
+
+#### With Condensation
+```code
+./scripts/multiround_cond_unlearn.sh
+```
+
+
+
+
+## SOTA Unlearning Implementation References Used in this Repo
+
+- [Fischer Forgetting](https://github.com/AdityaGolatkar/SelectiveForgetting)
+
+- [NTK Scrubbing](https://github.com/AdityaGolatkar/SelectiveForgetting)
+
+- [Prunning and Sparsity driven Catastrophic Forgetting](https://github.com/OPTML-Group/Unlearn-Sparse)
+
+- [Distillation based Unlearning](https://github.com/meghdadk/SCRUB)
+
+- [Good and Bad Teacher Distillation based Unlearning](https://github.com/vikram2000b/bad-teaching-unlearning)
+
+- [Synaptic Forgetting](https://github.com/if-loops/selective-synaptic-dampening)
+
+
+
+## SOTA Dataset Condensation References Used in this Repo
+- [Dataset condensation with gradient matching](https://github.com/VICO-UoE/DatasetCondensation)
+  
+- [Dataset condensation with distribution matching](https://github.com/VICO-UoE/DatasetCondensation)
+  
+- [Improved distribution matching for dataset condensation](https://github.com/uitrbn/IDM)
+
+
+
+## Further References Used in this Repo
+- [Dataset Condensation Driven Machine Unlearning](https://github.com/algebraicdianuj/DC_U)
+
+
 ## Hyperparameters Report
 ### CIFAR10 | ResNet-18 | Dataset Condensation Performed: Yes
 
@@ -245,102 +341,6 @@ pip install timm
 | bad\_distillation | bad\_kdT: 2.0, bad\_distill\_epochs: 30, partial\_retain\_ratio: 0.6234455830656301, bad\_distill\_lr: 0.005, bad\_momentum: 0.9, bad\_distill\_weight\_decay: 0.0005 |
 | 11\_sparsity | 11\_alpha: 1e-5, 11\_epochs: 40, 11\_no\_11\_epochs: 3, l1\_lr: 1e-2, 11\_momentum: 0.9, 11\_weight\_decay: 0.0005, 11\_warmup: 0 |
 | pruning | prune\_lr: 0.03, prune\_epochs: 20, prune\_target\_sparsity: 0.95, prune\_weight\_decay: 0.0005, prune\_momentum: 0.9, prune\_step: 5 |
-
-
-## Experiment: Section 4.2
-```code
-./scripts/run_c_cifar10.sh
-```
-
-
-
-## Experiment: Section 4.3
-
-### CIFAR-10
-#### Without Condensation
-```code
-./scripts/run_u_cifar10.sh
-```
-#### With Condensation
-```code
-./scripts/run_cu_cifar10.sh
-```
-### SVHN
-#### Without Condensation
-```code
-./scripts/run_u_svhn.sh
-```
-
-#### With Condensation
-```code
-./scripts/run_cu_svhn.sh
-```
-
-
-
-## Experiment: Section 4.4
-
-### CINIC-10
-Below are the different ablation configurations tested:
-
-| ablative_ | Description |
-|---------|-------------|
-| v1.py | Condensing whole retain |
-| v2.py | Residual retain dataset|
-| v3.py | Condensing free images |
-| v4.py | Free images |
-| v5.py | Condensing residual images |
-| v6.py | Residual images |
-| v7.py | Retain images |
-
-```code
-./scripts/ablations.sh
-```
-
-
-## Experiment: Section 4.5
-### CINIC-10
-#### Without Condensation
-```code
-./scripts/multiround_unlearn.sh
-```
-
-#### With Condensation
-```code
-./scripts/multiround_cond_unlearn.sh
-```
-
-
-
-
-## SOTA Unlearning Implementation References Used in this Repo
-
-- [Fischer Forgetting](https://github.com/AdityaGolatkar/SelectiveForgetting)
-
-- [NTK Scrubbing](https://github.com/AdityaGolatkar/SelectiveForgetting)
-
-- [Prunning and Sparsity driven Catastrophic Forgetting](https://github.com/OPTML-Group/Unlearn-Sparse)
-
-- [Distillation based Unlearning](https://github.com/meghdadk/SCRUB)
-
-- [Good and Bad Teacher Distillation based Unlearning](https://github.com/vikram2000b/bad-teaching-unlearning)
-
-- [Synaptic Forgetting](https://github.com/if-loops/selective-synaptic-dampening)
-
-
-
-## SOTA Dataset Condensation References Used in this Repo
-- [Dataset condensation with gradient matching](https://github.com/VICO-UoE/DatasetCondensation)
-  
-- [Dataset condensation with distribution matching](https://github.com/VICO-UoE/DatasetCondensation)
-  
-- [Improved distribution matching for dataset condensation](https://github.com/uitrbn/IDM)
-
-
-
-## Further References Used in this Repo
-- [Dataset Condensation Driven Machine Unlearning](https://github.com/algebraicdianuj/DC_U)
-
 
 
 
