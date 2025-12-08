@@ -163,12 +163,14 @@ def main(args):
     
     feature_extractor = get_model(args.feature_model_name, args.exp, data_storage, num_classes, device, load=False)
 
+    kmeans_time = time.time()
     fine_lab_train, indices_train_wrt_finelabels,_ = create_sub_classes(train_images, 
                                                                     train_labels, 
                                                                     model=feature_extractor, 
                                                                     num_classes=num_classes, 
                                                                     sub_divisions=n_subclasses, 
                                                                     device=device)
+    f_kmeans_time = time.time() - kmeans_time
 
     del feature_extractor
 
@@ -281,8 +283,10 @@ def main(args):
     #------------------------------------------------------------------------
 
 
-    # target images are the residual images of clusters that contain forget images
+    # target images are the residual images of clusters that contain forget images (F-sampling)
+    samp_time = time.time()
     target_images, target_labels, residual_images, residual_labels = seperated_dataset_sampling(indices_train_wrt_finelabels, train_images, train_labels, forget_indices)
+    f_samp_time = time.time() - samp_time
 
     #-------------------------------------------------------------------------------------------------------------------------------
     
@@ -293,6 +297,7 @@ def main(args):
 
 
     # ----------------------Pixel Dataset Condensation---------------------------------------------------------------------------------
+    condense_time = time.time()
     condensed_images, condensed_labels = blend_DC(
                                                 target_images,
                                                 target_labels,
@@ -302,6 +307,7 @@ def main(args):
                                                 device=device,
                                                 batch_size=32
                                                 )
+    f_condense_time = time.time() - condense_time
     
     reduced_retain_images = torch.cat([residual_images, condensed_images], dim=0)
     reduced_retain_labels = torch.cat([residual_labels, condensed_labels], dim=0)
@@ -365,6 +371,15 @@ def main(args):
 
 
         save_data(result_directory_path, 'acatf_cond', df, args.model_name, args.exp, choice)
+
+        # save kmeans, sampling and condensation times
+        time_data = {
+            'kmeans_time': [f_kmeans_time],
+            'sampling_time': [f_samp_time],
+            'condensation_time': [f_condense_time]
+        }
+        df_time = pd.DataFrame(time_data)
+        save_data(result_directory_path, 'cond_times', df_time, args.model_name, args.exp, choice)
         #-------------------------------------------------------------------------------------------------------------------------------
 
     #_______________________________________________________________________________________________________________________________
