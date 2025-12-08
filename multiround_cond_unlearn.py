@@ -131,7 +131,7 @@ def main(args):
     do_asparse=True
 
 
-    json_file_name=f'hyperparameters/{args.dataset}_{args.model_name}_cond_hyperparameters.json'
+    json_file_name=f'hyperparameters/{args.dataset}_{args.model_name}_condense_hyperparameters.json'
     params = load_hyperparameters(json_file_name, args)
     globals().update(params)
 
