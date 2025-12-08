@@ -615,8 +615,8 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp', type=int, default=1, help="Experiment number (default: 1)")
-    parser.add_argument('--model_name', type=str, choices=['cnn_s', 'vit_s', 'resnet_s', 'resnetlarge_s'], required=True, 
-                        help="Choose the model name from: vit, resnet, resnetlarge, vit_s, resnet_s, resnetlarge_s")
+    parser.add_argument('--model_name', type=str, choices=['cnn', 'resnet18', 'resnet50'], required=True, 
+                        help="Choose the model name from: cnn, resnet18, resnet50")
     parser.add_argument('--retrain_lr', type=float, default=1e-1, help="Retrain learning rate (default: 1e-4)")
     parser.add_argument('--dataset', type=str, choices=['cifar10', 'cifar100', 'svhn', 'cinic10'], default='cifar10', 
                         help="Choose the dataset from: cifar10 , cinic10, cifar100 or svhn")

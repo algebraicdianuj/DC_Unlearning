@@ -185,8 +185,8 @@ def main(args):
 if __name__ == '__main__':
     parser=argparse.ArgumentParser()
     parser.add_argument('--exp',type=int, default=1, help='Experiment number')
-    parser.add_argument('--model_name', type=str, choices=['cnn_s', 'vit_s', 'resnet_s', 'resnetlarge_s'], required=True, 
-                        help="Choose the model name from: vit, resnet, resnetlarge, vit_s, resnet_s, resnetlarge_s")
+    parser.add_argument('--model_name', type=str, choices=['cnn', 'resnet18', 'resnet50'], required=True, 
+                        help="Choose the model name from: cnn, resnet18, resnet50")
     parser.add_argument('--batch_size', type=int, default=64, help="Choose the batch size")
     parser.add_argument('--epochs', type=int, default=200, help="Choose the number of epochs")
     parser.add_argument('--lr', type=float, default=1e-1, help="Choose the learning rate")

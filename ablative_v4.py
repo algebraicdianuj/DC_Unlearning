@@ -136,7 +136,7 @@ def main(args):
     do_l1_sparsity=True
     do_pruning=True
 
-    json_file_name=f'hyperparameters/{args.dataset}_{args.model_name}_cond_hyperparameters.json'
+    json_file_name=f'hyperparameters/{args.dataset}_{args.model_name}_condense_hyperparameters.json'
     params = load_hyperparameters(json_file_name, args)
     globals().update(params)
 
@@ -372,9 +372,9 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp', type=int, default=1, help="Experiment number (default: 1)")
-    parser.add_argument('--model_name', type=str, choices=['cnn_s', 'vit_s', 'resnet_s', 'resnetlarge_s'], required=True, 
-                        help="Choose the model name from: vit, resnet, resnetlarge, vit_s, resnet_s, resnetlarge_s")
-    parser.add_argument('--feature_model_name', type=str, choices=['cnn_s', 'resnet_s', 'vit_s', 'resnetlarge_s'], default='cnn_s',
+    parser.add_argument('--model_name', type=str, choices=['cnn', 'resnet18', 'resnet50'], required=True, 
+                        help="Choose the model name from: cnn, resnet18, resnet50")
+    parser.add_argument('--feature_model_name', type=str, choices=['cnn', 'resnet18', 'resnet50'], default='cnn',
                     help="Choose the model name")
     parser.add_argument('--unlearning_mode', type=str, choices=['uniform', 'few_uniform', 'large_uniform', 'classwise', 'k_classwise'], required=True, 
                         help="Choose the unlearning mode from: uniform, or few_uniform, or classwise or k_classwise")

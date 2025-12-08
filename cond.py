@@ -463,9 +463,9 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp', type=int, default=1, help="Experiment number (default: 1)")
-    parser.add_argument('--model_name', type=str, choices=['cnn_s', 'resnet_s', 'resnetlarge_s'], required=True, 
+    parser.add_argument('--model_name', type=str, choices=['cnn', 'resnet18', 'resnet50'], required=True, 
                         help="Choose the model name")
-    parser.add_argument('--feature_model_name', type=str, choices=['cnn_s', 'resnet_s', 'resnetlarge_s'], default='cnn_s',
+    parser.add_argument('--feature_model_name', type=str, choices=['cnn', 'resnet18', 'resnet50'], default='cnn',
                         help="Choose the model name")
     parser.add_argument('--save_img', action='store_true', help="Save condensed images")
     parser.add_argument('--ipc', type=int, default=1, help="Number of subclasses per class (default: 1)")
