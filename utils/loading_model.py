@@ -1,8 +1,9 @@
 import os
+import time
 from model.model_resnet_s import *
-from model.model_t2tvit_p_s import *
+# from model.model_t2tvit_p_s import *
 from model.model_resnetlarge_s import *
-from model.model_t2tvit_t_s import *
+# from model.model_t2tvit_t_s import *
 
 from model.model_cnn_s import *
 from model.networks import ResNet18, ResNet50
@@ -33,19 +34,18 @@ def get_model(model_name, exp, data_storage, num_classes, device, load=True):
             net.load_state_dict(torch.load(file_path, weights_only=False))
 
 
+    # elif 'vit' in model_name:
+    #     net= T2TVisionTransformerP_S(num_classes=num_classes).to(device)
+    #     file_path = os.path.join(data_storage, f'pretrained_{model_name}_exp_{exp}.pth')
+    #     if load:
+    #         net.load_state_dict(torch.load(file_path, weights_only=False))
 
-    elif 'vit' in model_name:
-        net= T2TVisionTransformerP_S(num_classes=num_classes).to(device)
-        file_path = os.path.join(data_storage, f'pretrained_{model_name}_exp_{exp}.pth')
-        if load:
-            net.load_state_dict(torch.load(file_path, weights_only=False))
 
-
-    elif 'vitt' in model_name:
-        net= T2TVisionTransformerT_S(num_classes=num_classes).to(device)
-        file_path = os.path.join(data_storage, f'pretrained_{model_name}_exp_{exp}.pth')
-        if load:
-            net.load_state_dict(torch.load(file_path, weights_only=False))
+    # elif 'vitt' in model_name:
+    #     net= T2TVisionTransformerT_S(num_classes=num_classes).to(device)
+    #     file_path = os.path.join(data_storage, f'pretrained_{model_name}_exp_{exp}.pth')
+    #     if load:
+    #         net.load_state_dict(torch.load(file_path, weights_only=False))
 
 
     elif 'resnet50' in model_name:
