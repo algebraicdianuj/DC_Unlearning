@@ -226,7 +226,9 @@ class Accelerated_SCRUB_Unlearner:
             output = model_s(data)
             with torch.no_grad():
                 output_t = model_t(data)
-            loss = weight_gamma * main_criterion(output, target)**2
+            # loss = weight_gamma * main_criterion(output, target)**2
+            loss = nn.CrossEntropyLoss(reduction='none')(output, target)
+            loss = weight_gamma * torch.mean(loss**2)
             
             divergence_loss = criterion_div(output, output_t)
             loss += weight_beta * divergence_loss
