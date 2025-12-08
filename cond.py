@@ -68,8 +68,8 @@ def main(args):
 
     batch_size = 256
     channel = 3
-    im_size = torch.load(os.path.join(data_storage,'im_size.pt'))
-    num_classes = torch.load(os.path.join(data_storage,'num_classes.pt'))
+    im_size = torch.load(os.path.join(data_storage,'im_size.pt'), weights_only=False)
+    num_classes = torch.load(os.path.join(data_storage,'num_classes.pt'), weights_only=False)
     n_subclasses= args.ipc   # number of subclasses per class
 
     cifar_label_map = {
@@ -91,17 +91,17 @@ def main(args):
 
 
     file_path = os.path.join(data_storage,'test_dataset.pth')
-    dst_test = torch.load(file_path)
+    dst_test = torch.load(file_path, weights_only=False)
 
     file_path = os.path.join(data_storage,'train_dataset.pth')
-    img_real_data_dataset = torch.load(file_path)
+    img_real_data_dataset = torch.load(file_path, weights_only=False)
 
 
     file_path = os.path.join(data_storage,'means.pt')
-    img_mean = torch.load(file_path)
+    img_mean = torch.load(file_path, weights_only=False)
 
     file_path = os.path.join(data_storage,'stds.pt')
-    img_std = torch.load(file_path)
+    img_std = torch.load(file_path, weights_only=False)
 
 
     img_real_data_loader=torch.utils.data.DataLoader(img_real_data_dataset, batch_size=batch_size, shuffle=True)
