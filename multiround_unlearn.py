@@ -81,8 +81,8 @@ def main(args):
 
     batch_size = args.batch_size
     channel = 3
-    im_size = torch.load(os.path.join(data_storage,'im_size.pt'))
-    num_classes = torch.load(os.path.join(data_storage,'num_classes.pt'))
+    im_size = torch.load(os.path.join(data_storage,'im_size.pt'), weights_only=False)
+    num_classes = torch.load(os.path.join(data_storage,'num_classes.pt'), weights_only=False)
 
 
     do_acatf=True
@@ -106,10 +106,10 @@ def main(args):
 
 
     file_path = os.path.join(data_storage,'test_dataset.pth')
-    dst_test = torch.load(file_path)
+    dst_test = torch.load(file_path, weights_only=False)
 
     file_path = os.path.join(data_storage,'train_dataset.pth')
-    img_real_data_dataset = torch.load(file_path)
+    img_real_data_dataset = torch.load(file_path, weights_only=False)
 
     img_real_data_loader=torch.utils.data.DataLoader(img_real_data_dataset, batch_size=batch_size, shuffle=True)
 
