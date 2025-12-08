@@ -23,14 +23,14 @@ def get_model(model_name, exp, data_storage, num_classes, device, load=True):
         net = ResNet18(channel=3, num_classes= num_classes).to(device)
         file_path = os.path.join(data_storage, f'pretrained_{model_name}_exp_{exp}.pth')
         if load:
-            net.load_state_dict(torch.load(file_path))
+            net.load_state_dict(torch.load(file_path, weights_only=False))
 
 
     elif 'cnn_s' in model_name:
         net = ConvNet(channel=3, num_classes=num_classes, net_width=net_width, net_depth=net_depth, net_act=net_act, net_norm=net_norm, net_pooling=net_pooling, im_size=(32,32)).to(device)
         file_path = os.path.join(data_storage, f'pretrained_{model_name}_exp_{exp}.pth')
         if load:
-            net.load_state_dict(torch.load(file_path))
+            net.load_state_dict(torch.load(file_path, weights_only=False))
 
 
 
@@ -38,21 +38,21 @@ def get_model(model_name, exp, data_storage, num_classes, device, load=True):
         net= T2TVisionTransformerP_S(num_classes=num_classes).to(device)
         file_path = os.path.join(data_storage, f'pretrained_{model_name}_exp_{exp}.pth')
         if load:
-            net.load_state_dict(torch.load(file_path))
+            net.load_state_dict(torch.load(file_path, weights_only=False))
 
 
     elif 'vitt_s' in model_name:
         net= T2TVisionTransformerT_S(num_classes=num_classes).to(device)
         file_path = os.path.join(data_storage, f'pretrained_{model_name}_exp_{exp}.pth')
         if load:
-            net.load_state_dict(torch.load(file_path))
+            net.load_state_dict(torch.load(file_path, weights_only=False))
 
 
     elif 'resnetlarge_s' in model_name:
         net = ResNet50(channel=3, num_classes= num_classes).to(device)
         file_path = os.path.join(data_storage, f'pretrained_{model_name}_exp_{exp}.pth')
         if load:
-            net.load_state_dict(torch.load(file_path))
+            net.load_state_dict(torch.load(file_path, weights_only=False))
 
 
     else:

@@ -71,7 +71,7 @@ def get_dataset(dataset, data_path):
         num_classes = 200
         mean = [0.485, 0.456, 0.406]
         std = [0.229, 0.224, 0.225]
-        data = torch.load(os.path.join(data_path, 'tinyimagenet.pt'), map_location='cpu')
+        data = torch.load(os.path.join(data_path, 'tinyimagenet.pt'), map_location='cpu', weights_only=False)
 
         class_names = data['classes']
 
