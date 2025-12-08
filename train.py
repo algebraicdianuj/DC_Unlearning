@@ -84,7 +84,7 @@ def train_model(model, train_loader, val_loader, criterion, device,
         print(f'Epoch {epoch+1}: Train Acc: {train_acc:.3f}, Val Acc: {val_acc:.3f}, Time: {time.time() - start_time:.2f}s')
     
     if os.path.exists(temp_best_path):
-        model.load_state_dict(torch.load(temp_best_path))
+        model.load_state_dict(torch.load(temp_best_path, weights_only=False))
     
     os.makedirs(save_dir, exist_ok=True)
     file_path = os.path.join(save_dir, f'pretrained_{model_name}_exp_{exp}.pth')
@@ -127,8 +127,8 @@ def main(args):
     training_epochs = args.epochs
     batch_size = args.batch_size
     channel = 3
-    im_size = torch.load(os.path.join(data_storage,'im_size.pt'))
-    num_classes = torch.load(os.path.join(data_storage,'num_classes.pt'))
+    im_size = torch.load(os.path.join(data_storage,'im_size.pt'), weights_only=False)
+    num_classes = torch.load(os.path.join(data_storage,'num_classes.pt'), weights_only=False)
     lr_net=args.lr
     momentum = args.momentum
     weight_decay = args.weight_decay
@@ -137,9 +137,9 @@ def main(args):
 
 
     file_path = os.path.join(data_storage,'train_dataset.pth')
-    dst_train=torch.load(file_path)
+    dst_train=torch.load(file_path, weights_only=False)
     file_path = os.path.join(data_storage,'test_dataset.pth')
-    dst_test=torch.load(file_path)
+    dst_test=torch.load(file_path, weights_only=False)
     train_loader=torch.utils.data.DataLoader(dst_train, batch_size=batch_size, shuffle=True)
     test_loader=torch.utils.data.DataLoader(dst_test, batch_size=batch_size, shuffle=True)
 
