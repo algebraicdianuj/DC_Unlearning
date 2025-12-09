@@ -161,9 +161,9 @@ class Accelerated_CF_Unlearner:
             
             optimizer.zero_grad()
             output = model(data)
-            # loss = main_criterion(output, target)**2
-            loss = nn.CrossEntropyLoss(reduction='none')(output, target)
-            loss = torch.mean(loss**2)
+            loss = main_criterion(output, target)**2
+            # loss = nn.CrossEntropyLoss(reduction='none')(output, target)
+            # loss = torch.mean(loss**2)
             run_ce_loss += loss.item()
 
             test_output = model(test_data).detach()
